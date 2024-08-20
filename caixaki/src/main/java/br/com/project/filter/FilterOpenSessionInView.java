@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 import org.hibernate.SessionFactory;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -49,10 +50,10 @@ public class FilterOpenSessionInView extends DelegatingFilterProxy implements
 			ServletResponse servletResponse, FilterChain chain)
 			throws IOException, ServletException {
 
-		//BasicDataSource springDataSource = (BasicDataSource) ContextLoaderListenerCaixakiUtils.getBean("springDataSource");
+		BasicDataSource springDataSource = (BasicDataSource) ContextLoaderListenerCaixakiUtils.getBean("springDataSource");
 		DefaultTransactionDefinition def = new DefaultTransactionDefinition();
-		//PlatformTransactionManager transactionManager = new DataSourceTransactionManager(springDataSource);
-		//TransactionStatus status = transactionManager.getTransaction(def);
+		PlatformTransactionManager transactionManager = new DataSourceTransactionManager(springDataSource);
+		TransactionStatus status = transactionManager.getTransaction(def);
 
 		try {
 
@@ -70,7 +71,7 @@ public class FilterOpenSessionInView extends DelegatingFilterProxy implements
 			sf.getCurrentSession().beginTransaction();
 			chain.doFilter(servletRequest, servletResponse);
 
-			//transactionManager.commit(status);
+			transactionManager.commit(status);
 
 			if (sf.getCurrentSession().getTransaction().isActive()) {
 				sf.getCurrentSession().flush();
@@ -86,7 +87,7 @@ public class FilterOpenSessionInView extends DelegatingFilterProxy implements
 
 		} catch (Exception e) {
 
-			//transactionManager.rollback(status);
+			transactionManager.rollback(status);
 
 			e.printStackTrace();
 
